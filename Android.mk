@@ -1,4 +1,4 @@
-# Copyright (C) 2014 The Android Open Source Project
+# Copyright (C) 2011 The Android Open Source Project
 # Copyright (C) 2018 CypherOS
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,66 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-LOCAL_PATH:= $(call my-dir)
+LOCAL_PATH := $(call my-dir)
 
-# Disable frameworks aoscp for PDK builds instead
-# use prebuilts/sdk/current/
-ifneq ($(TARGET_BUILD_PDK),true)
-# Don't include in unbundled build.
-ifeq ($(TARGET_BUILD_APPS),)
+SUPPORT_PATH_LOTTIE := src
 
-SUPPORT_CURRENT_SDK_VERSION := current
+include $(CLEAR_VARS)
 
-###########################################################
-# Find all of the files in the given subdirs that match the
-# specified pattern but do not match another pattern. This
-# function uses $(1) instead of LOCAL_PATH as the base.
-# $(1): the base dir, relative to the root of the source tree.
-# $(2): the file name pattern to match.
-# $(3): the file name pattern to exclude.
-# $(4): a list of subdirs of the base dir.
-# Returns: a list of paths relative to the base dir.
-###########################################################
+LOCAL_USE_AAPT2 := true
+LOCAL_MODULE := frameworks-support-lottie
+LOCAL_SDK_VERSION := $(SUPPORT_CURRENT_SDK_VERSION)
+LOCAL_SRC_FILES := $(call all-java-files-under, $(SUPPORT_PATH_LOTTIE))
+LOCAL_RESOURCE_DIR := $(LOCAL_PATH)/res
 
-define find-files-in-subdirs-exclude
-$(sort $(patsubst ./%,%, \
-  $(shell cd $(1) ; \
-          find -L $(4) -name $(2) -and -not -name $(3) -and -not -name ".*") \
- ))
-endef
+LOCAL_STATIC_ANDROID_LIBRARIES := \
+        android-support-v7-appcompat
+		
+LOCAL_SHARED_ANDROID_LIBRARIES := \
+        android-support-v4 \
+        android-support-annotations
 
-###########################################################
-## Find all of the files under the named directories where
-## the file name matches the specified pattern but does not
-## match another pattern. Meant to be used like:
-##    SRC_FILES := $(call all-named-files-under,.*\.h,src tests)
-###########################################################
+LOCAL_JAVA_LANGUAGE_VERSION := 1.7
+LOCAL_AAPT_FLAGS := --add-javadoc-annotation doconly
+LOCAL_JAR_EXCLUDE_FILES := none
 
-define all-named-files-under-exclude
-$(call find-files-in-subdirs-exclude,$(LOCAL_PATH),"$(1)","$(2)",$(3))
-endef
-
-###########################################################
-## Find all of the files under the current directory where
-## the file name matches the specified pattern but does not
-## match another pattern.
-###########################################################
-
-define all-subdir-named-files-exclude
-$(call all-named-files-under-exclude,$(1),$(2),.)
-endef
-
-# Pre-process support library AIDLs
-aidl_files := $(addprefix $(LOCAL_PATH)/, $(call all-subdir-named-files-exclude,*.aidl,I*.aidl))
-support-aidl := $(TARGET_OUT_COMMON_INTERMEDIATES)/support.aidl
-$(support-aidl): $(aidl_files) | $(AIDL)
-	$(AIDL) --preprocess $@ $(aidl_files)
-
-# Build all support libraries
-include $(call all-makefiles-under,$(LOCAL_PATH))
-
-# Clear out variables
-SUPPORT_CURRENT_SDK_VERSION :=
-
-endif
-endif
+include $(BUILD_STATIC_JAVA_LIBRARY)
